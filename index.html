@@ -9,10 +9,439 @@
     <meta property="og:description" content="Fast and responsive unblocked games portal storing games as iframes in JSON with full-screen play and instant search." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="./vite.svg" />
+    <!-- Tailwind CSS CDN for instant GitHub Pages & unpkg direct rendering -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="./src/style.css" />
   </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+  <body class="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-orange-500 selection:text-slate-950">
+    <!-- Top Navigation Header -->
+    <header class="sticky top-0 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800 text-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+        <!-- Brand Logo -->
+        <div id="brand-logo" class="flex items-center gap-2.5 cursor-pointer group select-none shrink-0">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-600 via-orange-500 to-rose-500 flex items-center justify-center shadow-lg shadow-orange-500/20 group-hover:scale-105 transition-transform duration-200">
+            <span class="text-xl">🔥</span>
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="font-extrabold text-xl tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-amber-300 to-yellow-200">
+                IGNITE
+              </span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30 tracking-widest uppercase">
+                Unblocked
+              </span>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium -mt-0.5 hidden sm:block">
+              HTML5 Iframe Games Hub
+            </p>
+          </div>
+        </div>
+
+        <!-- Search Bar -->
+        <div class="flex-1 max-w-md mx-2 relative">
+          <div class="relative">
+            <span class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none text-sm">🔍</span>
+            <input
+              id="game-search-input"
+              type="text"
+              placeholder="Search games, categories, tags..."
+              class="w-full bg-slate-900 border border-slate-700/80 rounded-full pl-10 pr-10 py-2 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 transition-all"
+            />
+            <button
+              id="clear-search-btn"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200 px-1 hidden"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Action Controls -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Favorites filter button -->
+          <button
+            id="filter-favorites-btn"
+            title="View starred favorite games"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-900/80 text-slate-300 border border-slate-800 hover:border-slate-700 hover:text-slate-100 transition-all"
+          >
+            <span class="text-amber-400">★</span>
+            <span class="hidden md:inline">Favorites</span>
+            <span id="favorites-badge-count" class="px-1.5 py-0.2 rounded-full text-[10px] bg-slate-800 text-slate-300">
+              4
+            </span>
+          </button>
+
+          <!-- Random Game -->
+          <button
+            id="btn-random-game"
+            title="Play a random game"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 hover:border-slate-700 transition-all"
+          >
+            <span class="text-orange-400">🎲</span>
+            <span class="hidden lg:inline">Random</span>
+          </button>
+
+          <!-- Add Game -->
+          <button
+            id="btn-add-custom-game"
+            title="Add a custom game via iframe"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 hover:border-slate-700 transition-all"
+          >
+            <span class="text-emerald-400">＋</span>
+            <span class="hidden sm:inline">Add Game</span>
+          </button>
+
+          <!-- Tab Cloak -->
+          <button
+            id="btn-tab-cloak"
+            title="Disguise tab as Google Docs / Classroom"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-slate-100 border border-slate-800 hover:border-slate-700 transition-all"
+          >
+            <span class="text-sky-400">🛡️</span>
+            <span class="hidden xl:inline">Tab Cloak</span>
+          </button>
+
+          <!-- games.json viewer -->
+          <button
+            id="btn-view-json"
+            title="Inspect games.json and iframe storage"
+            class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold bg-orange-600/20 hover:bg-orange-600/30 text-orange-300 border border-orange-500/30 transition-all"
+          >
+            <span class="text-orange-400">{ }</span>
+            <span class="hidden md:inline">JSON</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- App Main Body Container -->
+    <div id="app-root" class="flex-1 flex flex-col">
+      <!-- Player View (hidden by default) -->
+      <main id="player-view" class="flex-1 py-2" style="display: none;"></main>
+
+      <!-- Catalog View (shown by default) -->
+      <div id="catalog-view" class="flex-1 flex flex-col">
+        <!-- Category Navigation Bar -->
+        <nav class="w-full py-3 px-4 sm:px-6 lg:px-8 border-b border-slate-800/80 bg-slate-900/40">
+          <div id="category-pills-container" class="max-w-7xl mx-auto flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+            <!-- Rendered by JS -->
+          </div>
+        </nav>
+
+        <!-- Subheader Hero / Status Banner -->
+        <section class="bg-gradient-to-b from-slate-900/60 to-transparent border-b border-slate-800/40 py-6 px-4 sm:px-6 lg:px-8">
+          <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 mb-1">
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider text-orange-400 bg-orange-500/10 px-2 py-0.5 rounded-full border border-orange-500/20">
+                  🔥 Unblocked Arcade Portal
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                  🛡️ No AI Features
+                </span>
+                <span class="inline-flex items-center gap-1 text-[11px] font-bold text-sky-400 bg-sky-500/10 px-2 py-0.5 rounded-full border border-sky-500/20 hidden sm:inline-flex">
+                  📦 unpkg.com/ignite-main
+                </span>
+              </div>
+              <h1 class="text-xl sm:text-2xl font-black text-slate-100 tracking-tight">
+                Play Unblocked Games Instantly
+              </h1>
+              <p class="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+                Every game is stored directly as an HTML <code class="text-orange-300 font-mono">iframe</code> in <code class="text-orange-300 font-mono">games.json</code>. Fast loading, offline capable, zero trackers, and customizable.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+              <button
+                id="browse-json-storage-btn"
+                class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-sm"
+              >
+                <span>Inspect games.json</span>
+              </button>
+              <button
+                id="random-quick-play-btn"
+                class="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-orange-600 hover:bg-orange-500 text-white text-xs font-extrabold transition-all shadow-md shadow-orange-600/30"
+              >
+                <span>✨ Surprise Me</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- Games Grid Section -->
+        <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+          <!-- Filter Status Bar -->
+          <div class="flex items-center justify-between mb-4 text-xs text-slate-400">
+            <div id="filter-status-text">
+              Showing games...
+            </div>
+            <button
+              onclick="window.resetSearchAndCategory()"
+              class="text-orange-400 hover:underline font-semibold"
+            >
+              Clear Filters
+            </button>
+          </div>
+
+          <!-- Cards Grid -->
+          <div
+            id="games-grid"
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4"
+          >
+            <!-- Rendered by JS -->
+          </div>
+
+          <!-- Empty State -->
+          <div
+            id="empty-state"
+            class="flex-col items-center justify-center py-16 text-center border border-dashed border-slate-800 rounded-2xl bg-slate-900/30"
+            style="display: none;"
+          >
+            <div class="w-12 h-12 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center mb-3 text-2xl">
+              😕
+            </div>
+            <h3 class="text-base font-bold text-slate-200 mb-1">No Games Found</h3>
+            <p class="text-xs text-slate-400 max-w-sm mb-4">
+              We couldn't find any games matching your current search or category filter.
+            </p>
+            <div class="flex gap-2">
+              <button
+                onclick="window.resetSearchAndCategory()"
+                class="px-3.5 py-1.5 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-semibold text-xs transition-colors"
+              >
+                Reset Filters
+              </button>
+              <button
+                onclick="window.openAddGameModal()"
+                class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition-colors"
+              >
+                Add a Custom Game
+              </button>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-800/80 bg-slate-950 py-6 px-4 sm:px-6 lg:px-8 text-xs text-slate-500">
+      <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-orange-500">🔥</span>
+          <span class="font-bold text-slate-300">Ignite Unblocked Games</span>
+          <span>•</span>
+          <span>All games rendered via JSON iframe storage</span>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-4 text-[11px]">
+          <span class="text-slate-400 flex items-center gap-1">
+            <span class="text-emerald-400">✓</span>
+            Package: <code class="text-slate-300">ignite-main</code>
+          </span>
+          <button id="footer-view-json" class="hover:text-orange-400 transition-colors">
+            View games.json
+          </button>
+          <button id="footer-tab-cloak" class="hover:text-orange-400 transition-colors">
+            Tab Cloaker (Default)
+          </button>
+        </div>
+      </div>
+    </footer>
+
+    <!-- Add Custom Game Modal -->
+    <div id="add-game-modal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl modal-content">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-lg">
+              ＋
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-100 text-sm">Add Custom Game</h3>
+              <p class="text-[11px] text-slate-400">Store a new game as an iframe in JSON</p>
+            </div>
+          </div>
+          <button data-close-modal class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-sm">
+            ✕
+          </button>
+        </div>
+
+        <form id="add-game-form" class="p-5 flex flex-col gap-3.5 text-xs text-slate-300">
+          <div id="custom-game-error" class="bg-rose-500/10 border border-rose-500/30 text-rose-400 p-3 rounded-xl hidden text-xs"></div>
+
+          <div>
+            <label class="block font-semibold text-slate-200 mb-1">Game Title *</label>
+            <input
+              id="custom-title-input"
+              type="text"
+              required
+              placeholder="e.g. Awesome Moto Racer"
+              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block font-semibold text-slate-200 mb-1">Category</label>
+              <select
+                id="custom-cat-input"
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:border-orange-500"
+              >
+                <option value="Action">Action</option>
+                <option value="Arcade">Arcade</option>
+                <option value="Puzzle">Puzzle</option>
+                <option value="Sports">Sports</option>
+                <option value="Retro">Retro</option>
+                <option value="Racing">Racing</option>
+              </select>
+            </div>
+            <div>
+              <label class="block font-semibold text-slate-200 mb-1">Controls Guide</label>
+              <input
+                id="custom-controls-input"
+                type="text"
+                placeholder="e.g. WASD to move, Space to shoot"
+                class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-200 mb-1">Game Iframe Code or URL *</label>
+            <textarea
+              id="custom-iframe-input"
+              required
+              rows="3"
+              placeholder='<iframe src="https://..." width="100%" height="100%"></iframe> or https://...'
+              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 font-mono text-[11px] focus:outline-none focus:border-orange-500 resize-none"
+            ></textarea>
+            <p class="text-[10px] text-slate-500 mt-1">
+              Paste an HTML iframe tag or a direct game link. It will be stored in JSON.
+            </p>
+          </div>
+
+          <div>
+            <label class="block font-semibold text-slate-200 mb-1">Description</label>
+            <input
+              id="custom-desc-input"
+              type="text"
+              placeholder="Short summary of the game"
+              class="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:border-orange-500"
+            />
+          </div>
+
+          <div class="pt-2 flex justify-end gap-2">
+            <button
+              type="button"
+              data-close-modal
+              class="px-4 py-2 rounded-lg bg-slate-800 text-slate-300 font-semibold hover:bg-slate-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-500 text-white font-bold transition-all shadow-md shadow-orange-600/30"
+            >
+              Add to Games List
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- JSON Viewer Modal -->
+    <div id="json-viewer-modal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden shadow-2xl modal-content">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/40">
+          <div class="flex items-center gap-2.5">
+            <div class="w-8 h-8 rounded-lg bg-orange-500/20 text-orange-400 flex items-center justify-center font-mono font-bold text-xs">
+              { }
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h3 class="font-bold text-slate-100 text-sm">games.json</h3>
+                <span class="text-[10px] font-bold px-1.5 py-0.2 rounded bg-orange-500/20 text-orange-300 border border-orange-500/30">
+                  Iframe Storage
+                </span>
+              </div>
+              <p class="text-[11px] text-slate-400">
+                Each game entry is stored with its complete HTML iframe
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              id="copy-json-btn"
+              onclick="window.copyJsonData()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+            >
+              <span>📋 Copy JSON</span>
+            </button>
+            <button
+              onclick="window.downloadJsonData()"
+              class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+            >
+              <span>💾 Download</span>
+            </button>
+            <button
+              data-close-modal
+              class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors ml-1"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <div class="bg-orange-950/40 border-b border-orange-900/40 px-5 py-2.5 flex items-center justify-between text-xs text-orange-200/90">
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-orange-400">unpkg.com/ignite-main:</span>
+            <span>Package entry configured in package.json to view files & index</span>
+          </div>
+          <span class="text-[11px] text-orange-400 font-semibold">GitHub Pages Ready</span>
+        </div>
+
+        <div class="p-4 flex-1 overflow-auto bg-slate-950">
+          <pre id="json-modal-code" class="font-mono text-xs text-slate-300 leading-relaxed select-all"></pre>
+        </div>
+
+        <div class="px-5 py-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-[11px] text-slate-400">
+          <span>Format: <code class="text-orange-400 font-mono">[{"id": "...", "iframe": "&lt;iframe ... /&gt;"}]</code></span>
+          <span>Zero AI Features • 100% Client-Side Games Engine</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab Cloak Modal -->
+    <div id="tab-cloak-modal" class="fixed inset-0 z-50 modal-backdrop flex items-center justify-center p-4 hidden">
+      <div class="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl modal-content">
+        <div class="px-5 py-4 border-b border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-sky-500/20 text-sky-400 flex items-center justify-center text-base">
+              🛡️
+            </div>
+            <div>
+              <h3 class="font-bold text-slate-100 text-sm">Tab Cloaker</h3>
+              <p class="text-[11px] text-slate-400">Disguise browser tab title & favicon</p>
+            </div>
+          </div>
+          <button data-close-modal class="text-slate-400 hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-800 transition-colors text-sm">
+            ✕
+          </button>
+        </div>
+
+        <div id="cloak-options-list" class="p-4 flex flex-col gap-2">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="px-5 py-3 bg-slate-950 border-t border-slate-800 text-[11px] text-slate-400">
+          Tab cloaking changes your tab's title and icon so it looks like schoolwork.
+        </div>
+      </div>
+    </div>
+
+    <!-- Application Script Entry Point -->
+    <script type="module" src="./src/app.js"></script>
   </body>
 </html>
-
