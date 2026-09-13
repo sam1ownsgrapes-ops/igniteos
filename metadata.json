@@ -1,0 +1,6 @@
+{
+  "name": "Ignite Unblocked Games",
+  "description": "Fast and responsive unblocked games portal storing games as iframes in JSON with full-screen play and instant search.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
